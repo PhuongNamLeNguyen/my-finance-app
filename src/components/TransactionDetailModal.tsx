@@ -38,17 +38,6 @@ export default function TransactionDetailModal({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="flex w-full bg-background-light dark:bg-background-dark py-4 px-4">
-            <div className="w-full overflow-hidden rounded-xl border border-primary/20 shadow-sm aspect-[3/4] relative">
-              <div
-                className="absolute inset-0 bg-center bg-no-repeat bg-contain bg-slate-200 dark:bg-slate-800"
-                style={{
-                  backgroundImage: `url(${transaction.imageUrl || "https://placehold.co/400x600?text=No+Image"})`,
-                }}
-              ></div>
-            </div>
-          </div>
-
           <div className="px-6 py-4">
             <h3 className="text-primary text-sm font-bold uppercase tracking-wider mb-4">
               Thông tin tóm tắt
@@ -82,29 +71,9 @@ export default function TransactionDetailModal({
                 <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                   Danh mục
                 </p>
-                <select
-                  value={transaction.category}
-                  onChange={(e) =>
-                    onUpdate({ ...transaction, category: e.target.value as any })
-                  }
-                  className="text-slate-900 dark:text-slate-100 text-sm font-medium text-right font-bold bg-transparent border-none focus:ring-0 p-0"
-                  dir="rtl"
-                >
-                  {[
-                    "Mua sắm",
-                    "Ăn uống",
-                    "Gia đình",
-                    "Di chuyển",
-                    "Quà tặng",
-                    "Y tế",
-                    "Học tập",
-                    "Khác",
-                  ].map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <p className="text-slate-900 dark:text-slate-100 text-sm font-bold text-right">
+                  {transaction.category}
+                </p>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-primary/5">
                 <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
@@ -116,6 +85,19 @@ export default function TransactionDetailModal({
               </div>
             </div>
           </div>
+
+          {transaction.imageUrl && (
+            <div className="flex w-full bg-background-light dark:bg-background-dark py-4 px-4">
+              <div className="w-full overflow-hidden rounded-xl border border-primary/20 shadow-sm aspect-[3/4] relative">
+                <div
+                  className="absolute inset-0 bg-center bg-no-repeat bg-contain bg-slate-200 dark:bg-slate-800"
+                  style={{
+                    backgroundImage: `url(${transaction.imageUrl})`,
+                  }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

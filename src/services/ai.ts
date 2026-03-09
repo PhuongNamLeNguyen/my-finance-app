@@ -11,7 +11,7 @@ export async function analyzeReceipt(
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3.1-pro-preview",
         contents: {
           parts: [
             {
@@ -63,7 +63,7 @@ export async function analyzeReceipt(
       };
     } catch (e: any) {
       if (e?.status === 429 || e?.message?.includes("429") || e?.message?.includes("Quota exceeded")) {
-        throw new Error("Bạn đã thao tác quá nhanh hoặc vượt quá giới hạn AI miễn phí. Vui lòng đợi khoảng 1 phút rồi thử lại.");
+        throw new Error("Bạn đã sử dụng hết lượt phân tích hóa đơn miễn phí trong ngày hôm nay. Vui lòng thử lại vào ngày mai hoặc nâng cấp tài khoản API.");
       }
       if (e?.status === 503 || e?.message?.includes("503")) {
         if (attempt < retries - 1) {
