@@ -62,6 +62,9 @@ export async function analyzeReceipt(
         category: data.category as Category,
       };
     } catch (e: any) {
+      if (e?.status === 429 || e?.message?.includes("429") || e?.message?.includes("Quota exceeded")) {
+        throw new Error("Bạn đã thao tác quá nhanh hoặc vượt quá giới hạn AI miễn phí. Vui lòng đợi khoảng 1 phút rồi thử lại.");
+      }
       if (e?.status === 503 || e?.message?.includes("503")) {
         if (attempt < retries - 1) {
           console.warn(`AI model overloaded (503). Retrying in ${Math.pow(2, attempt)} seconds...`);
