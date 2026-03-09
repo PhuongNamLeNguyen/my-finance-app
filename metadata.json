@@ -1,0 +1,5 @@
+{
+  "name": "Quản lý Chi tiêu AI",
+  "description": "Ứng dụng quản lý chi tiêu thông minh bằng cách phân tích hóa đơn qua AI.",
+  "requestFramePermissions": ["camera"]
+}
