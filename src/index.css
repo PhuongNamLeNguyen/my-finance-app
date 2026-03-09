@@ -15,6 +15,7 @@ body {
   font-family: var(--font-display);
   background-color: var(--color-background-light);
   color: #0f172a;
+  touch-action: manipulation;
 }
 
 @media (prefers-color-scheme: dark) {
