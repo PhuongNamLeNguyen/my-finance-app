@@ -26,7 +26,7 @@ interface HomeProps {
 
 const COLORS = ["#cf6317", "#fcd34d", "#d97706", "#8b5cf6", "#64748b"];
 
-export default function Home({
+export default React.memo(function Home({
   transactions,
   userName,
   onUploadClick,
@@ -366,7 +366,7 @@ export default function Home({
       )}
     </main>
   );
-}
+});
 
 function ManualEntryModal({
   onClose,
@@ -391,7 +391,7 @@ function ManualEntryModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !content || !date) return;
+    if (!amount || !date) return;
 
     const newTransaction: Transaction = {
       id: Math.random().toString(36).substring(2, 15),
@@ -405,7 +405,7 @@ function ManualEntryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-primary/10 flex justify-between items-center">
           <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">
@@ -516,7 +516,7 @@ function ManualIncomeModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !content || !date) return;
+    if (!amount || !date) return;
 
     const newTransaction: Transaction = {
       id: Math.random().toString(36).substring(2, 15),
@@ -531,7 +531,7 @@ function ManualIncomeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4">
       <div className="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="p-4 border-b border-primary/10 flex justify-between items-center">
           <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100">

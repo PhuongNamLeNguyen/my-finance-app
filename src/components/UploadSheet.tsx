@@ -26,7 +26,7 @@ export default function UploadSheet({
     <>
       {/* Semi-transparent Dark Background Overlay */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-[2px] z-40"
+        className="fixed inset-0 bg-slate-900/70 z-40"
         onClick={onClose}
       />
 

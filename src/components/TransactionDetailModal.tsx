@@ -16,7 +16,7 @@ export default function TransactionDetailModal({
   if (!transaction) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="relative flex h-full max-h-[90vh] w-full max-w-lg flex-col bg-background-light dark:bg-background-dark rounded-xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-primary/10">
           <button

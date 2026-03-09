@@ -11,7 +11,7 @@ export async function analyzeReceipt(
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3.1-flash-lite-preview",
         contents: {
           parts: [
             {

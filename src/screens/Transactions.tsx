@@ -87,7 +87,7 @@ function CustomSelect({
   );
 }
 
-export default function Transactions({
+export default React.memo(function Transactions({
   transactions,
   onTransactionClick,
 }: TransactionsProps) {
@@ -370,4 +370,4 @@ export default function Transactions({
       </main>
     </div>
   );
-}
+});

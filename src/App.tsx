@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Transaction } from "./types";
 import { analyzeReceipt } from "./services/ai";
 import { resizeImage } from "./utils/image";
@@ -171,6 +171,20 @@ export default function App() {
     document.cookie = "isAuthenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   };
 
+  const handleAddTransaction = useCallback((t: Transaction) => {
+    setTransactions((prev) => [t, ...prev]);
+    showToast("Đã thêm giao dịch thành công!");
+  }, []);
+
+  const handleAddIncome = useCallback((t: Transaction) => {
+    setTransactions((prev) => [t, ...prev]);
+    showToast("Đã thêm nguồn thu thành công!");
+  }, []);
+
+  const handleUploadClick = useCallback(() => {
+    setIsUploadSheetOpen(true);
+  }, []);
+
   if (!isAuthenticated) {
     if (authScreen === "forgot") {
       return <ForgotPassword onBack={() => setAuthScreen("login")} />;
@@ -195,16 +209,10 @@ export default function App() {
           <Home
             transactions={transactions}
             userName={userName}
-            onUploadClick={() => setIsUploadSheetOpen(true)}
+            onUploadClick={handleUploadClick}
             onTransactionClick={setSelectedTransaction}
-            onAddTransaction={(t) => {
-              setTransactions((prev) => [t, ...prev]);
-              showToast("Đã thêm giao dịch thành công!");
-            }}
-            onAddIncome={(t) => {
-              setTransactions((prev) => [t, ...prev]);
-              showToast("Đã thêm nguồn thu thành công!");
-            }}
+            onAddTransaction={handleAddTransaction}
+            onAddIncome={handleAddIncome}
           />
         )}
         {activeTab === "transactions" && (
@@ -233,7 +241,7 @@ export default function App() {
 
       {/* Processing Overlay */}
       {isProcessing && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
           <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl flex flex-col items-center gap-4">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             <p className="font-bold text-slate-900 dark:text-slate-100">
