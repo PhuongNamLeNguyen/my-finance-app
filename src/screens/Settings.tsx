@@ -5,6 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Transaction } from "../types";
 import TransactionItem from "../components/TransactionItem";
 import { restoreTransaction, permanentlyDeleteTransaction } from "../services/db";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Settings({ onLogout, userName, onUserNameChange, userEmail, deletedTransactions, onRestoreTransaction, onPermanentDeleteTransaction }: { onLogout: () => void, userName: string, onUserNameChange: (name: string) => void, userEmail: string | null, deletedTransactions: Transaction[], onRestoreTransaction: (t: Transaction) => void, onPermanentDeleteTransaction: (t: Transaction) => void }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -12,6 +13,7 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
   const [avatarUrl, setAvatarUrl] = useState<string | null>(auth.currentUser?.photoURL || null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<{t: Transaction, resolve: (value: boolean) => void} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -91,9 +93,24 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
     onRestoreTransaction(t);
   };
 
-  const handlePermanentDelete = async (t: Transaction) => {
-    if (confirm("Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này?")) {
-      onPermanentDeleteTransaction(t);
+  const handlePermanentDelete = (t: Transaction): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTransactionToDelete({ t, resolve });
+    });
+  };
+
+  const confirmPermanentDelete = () => {
+    if (transactionToDelete) {
+      onPermanentDeleteTransaction(transactionToDelete.t);
+      transactionToDelete.resolve(true);
+      setTransactionToDelete(null);
+    }
+  };
+
+  const cancelPermanentDelete = () => {
+    if (transactionToDelete) {
+      transactionToDelete.resolve(false);
+      setTransactionToDelete(null);
     }
   };
 
@@ -118,12 +135,50 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
                 key={t.id} 
                 transaction={t} 
                 onClick={() => {}} 
-                onDelete={() => handlePermanentDelete(t)}
-                onRestore={() => handleRestore(t)}
+                onDelete={handlePermanentDelete}
+                onRestore={handleRestore}
               />
             ))
           )}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <AnimatePresence>
+          {transactionToDelete && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl"
+              >
+                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4 mx-auto">
+                  <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-2xl">warning</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center mb-2">
+                  Xóa vĩnh viễn giao dịch?
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 text-center mb-6 text-sm">
+                  Hành động này không thể hoàn tác. Giao dịch sẽ bị xóa khỏi hệ thống vĩnh viễn.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={cancelPermanentDelete}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={confirmPermanentDelete}
+                    className="flex-1 py-3 px-4 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 transition-colors"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }

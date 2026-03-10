@@ -7,8 +7,8 @@ interface TransactionItemProps {
   key?: React.Key;
   transaction: Transaction;
   onClick: (t: Transaction) => void;
-  onDelete?: (t: Transaction) => void;
-  onRestore?: (t: Transaction) => void;
+  onDelete?: (t: Transaction) => void | Promise<boolean | void>;
+  onRestore?: (t: Transaction) => void | Promise<boolean | void>;
 }
 
 const categoryConfig: Record<
@@ -103,11 +103,33 @@ export default function TransactionItem({
     if (onDelete && (offset < -100 || velocity < -500)) {
       setIsDeleting(true);
       await controls.start({ x: "-100%", opacity: 0, transition: { duration: 0.2 } });
-      onDelete(transaction);
+      try {
+        const result = await onDelete(transaction);
+        if (result === false) {
+          setIsDeleting(false);
+          controls.start({ x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 30 } });
+          setDragDirection(null);
+        }
+      } catch (error) {
+        setIsDeleting(false);
+        controls.start({ x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 30 } });
+        setDragDirection(null);
+      }
     } else if (onRestore && (offset > 100 || velocity > 500)) {
       setIsDeleting(true);
       await controls.start({ x: "100%", opacity: 0, transition: { duration: 0.2 } });
-      onRestore(transaction);
+      try {
+        const result = await onRestore(transaction);
+        if (result === false) {
+          setIsDeleting(false);
+          controls.start({ x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 30 } });
+          setDragDirection(null);
+        }
+      } catch (error) {
+        setIsDeleting(false);
+        controls.start({ x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 30 } });
+        setDragDirection(null);
+      }
     } else {
       controls.start({ x: 0, opacity: 1, transition: { type: "spring", stiffness: 300, damping: 30 } });
       setDragDirection(null);
