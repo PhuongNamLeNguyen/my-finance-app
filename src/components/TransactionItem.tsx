@@ -20,40 +20,40 @@ const categoryConfig: Record<
     colorClass: "text-primary",
     bgClass: "bg-orange-100 dark:bg-primary/20",
   },
-  "Mua sắm": {
-    icon: "shopping_bag",
-    colorClass: "text-blue-600",
-    bgClass: "bg-blue-100 dark:bg-blue-900/20",
+  "Học tập": {
+    icon: "school",
+    colorClass: "text-indigo-600",
+    bgClass: "bg-indigo-100 dark:bg-indigo-900/20",
   },
   "Di chuyển": {
     icon: "directions_car",
     colorClass: "text-green-600",
     bgClass: "bg-green-100 dark:bg-green-900/20",
   },
-  "Gia đình": {
+  "Sinh hoạt": {
     icon: "home",
     colorClass: "text-teal-600",
     bgClass: "bg-teal-100 dark:bg-teal-900/20",
-  },
-  "Quà tặng": {
-    icon: "redeem",
-    colorClass: "text-pink-600",
-    bgClass: "bg-pink-100 dark:bg-pink-900/20",
   },
   "Y tế": {
     icon: "medical_services",
     colorClass: "text-red-600",
     bgClass: "bg-red-100 dark:bg-red-900/20",
   },
-  "Học tập": {
-    icon: "school",
-    colorClass: "text-indigo-600",
-    bgClass: "bg-indigo-100 dark:bg-indigo-900/20",
+  "Quà tặng": {
+    icon: "redeem",
+    colorClass: "text-pink-600",
+    bgClass: "bg-pink-100 dark:bg-pink-900/20",
   },
-  "Giải trí": {
-    icon: "movie",
-    colorClass: "text-purple-600",
-    bgClass: "bg-purple-100 dark:bg-purple-900/20",
+  "Thời trang": {
+    icon: "checkroom",
+    colorClass: "text-blue-600",
+    bgClass: "bg-blue-100 dark:bg-blue-900/20",
+  },
+  "Phí phát sinh": {
+    icon: "build",
+    colorClass: "text-amber-600",
+    bgClass: "bg-amber-100 dark:bg-amber-900/20",
   },
   "Tiền lương": {
     icon: "payments",

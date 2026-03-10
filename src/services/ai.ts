@@ -21,7 +21,7 @@ export async function analyzeReceipt(
               },
             },
             {
-              text: "Phân tích ảnh hóa đơn/biên lai chuyển khoản này. Trích xuất các thông tin sau: số tiền (amount) dạng số nguyên (không có dấu phẩy hay chữ). LƯU Ý QUAN TRỌNG: Nếu hóa đơn là tiền Yên Nhật (JPY), hãy tự động chuyển đổi sang Việt Nam Đồng (VND) theo tỉ giá hiện tại (khoảng 1 JPY = 165 VND) và chỉ trả về số tiền VND đã chuyển đổi. Nội dung chuyển khoản/mua hàng (content), ngày giờ giao dịch (date) định dạng ISO 8601 (ví dụ: 2023-10-24T10:30:00Z), và phân loại danh mục (category) vào 1 trong các loại sau: 'Mua sắm', 'Ăn uống', 'Gia đình', 'Di chuyển', 'Quà tặng', 'Y tế', 'Học tập', 'Khác'. Những item không phân biệt được category sẽ chuyển sang 'Khác'. Nếu không rõ ngày giờ, hãy dùng thời gian hiện tại. NẾU KHÔNG TÌM THẤY THÔNG TIN HOẶC ẢNH KHÔNG PHẢI HÓA ĐƠN: Hãy trả về amount là 0, content là 'Không rõ nội dung', date là thời gian hiện tại, và category là 'Khác'. Đừng báo lỗi.",
+              text: "Phân tích ảnh hóa đơn/biên lai chuyển khoản này. Trích xuất các thông tin sau: số tiền (amount) dạng số nguyên (không có dấu phẩy hay chữ). LƯU Ý QUAN TRỌNG: Nếu hóa đơn là tiền Yên Nhật (JPY), hãy tự động chuyển đổi sang Việt Nam Đồng (VND) theo tỉ giá hiện tại (khoảng 1 JPY = 165 VND) và chỉ trả về số tiền VND đã chuyển đổi. Nội dung chuyển khoản/mua hàng (content), ngày giờ giao dịch (date) định dạng ISO 8601 (ví dụ: 2023-10-24T10:30:00Z), và phân loại danh mục (category) vào 1 trong các loại sau dựa trên quy tắc: 'Ăn uống' (đồ ăn, nước uống, tên quán ăn), 'Học tập' (sách vở, học phí), 'Di chuyển' (xăng xe, trạm xăng, tàu điện), 'Sinh hoạt' (điện, nước, ga, tiền trọ), 'Y tế' (bệnh, bệnh viện), 'Quà tặng' (tặng quà, chúc mừng lễ), 'Thời trang' (áo quần, giày dép), 'Phí phát sinh' (hư hỏng xe, sửa chữa), 'Khác' (ngoài những mục trên). Nếu không rõ ngày giờ, hãy dùng thời gian hiện tại. NẾU KHÔNG TÌM THẤY THÔNG TIN HOẶC ẢNH KHÔNG PHẢI HÓA ĐƠN: Hãy trả về amount là 0, content là 'Không rõ nội dung', date là thời gian hiện tại, và category là 'Khác'. Đừng báo lỗi.",
             },
           ],
         },
@@ -45,7 +45,7 @@ export async function analyzeReceipt(
               category: {
                 type: Type.STRING,
                 description:
-                  "Phân loại: 'Mua sắm', 'Ăn uống', 'Gia đình', 'Di chuyển', 'Quà tặng', 'Y tế', 'Học tập', 'Khác'",
+                  "Phân loại: 'Ăn uống', 'Học tập', 'Di chuyển', 'Sinh hoạt', 'Y tế', 'Quà tặng', 'Thời trang', 'Phí phát sinh', 'Khác'",
               },
             },
             required: ["amount", "content", "date", "category"],

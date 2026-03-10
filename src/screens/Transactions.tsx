@@ -187,25 +187,26 @@ export default React.memo(function Transactions({
 
   const categories = [
     { label: "Toàn bộ", value: "all" },
-    { label: "Mua sắm", value: "Mua sắm" },
     { label: "Ăn uống", value: "Ăn uống" },
-    { label: "Gia đình", value: "Gia đình" },
-    { label: "Di chuyển", value: "Di chuyển" },
-    { label: "Quà tặng", value: "Quà tặng" },
-    { label: "Y tế", value: "Y tế" },
     { label: "Học tập", value: "Học tập" },
+    { label: "Di chuyển", value: "Di chuyển" },
+    { label: "Sinh hoạt", value: "Sinh hoạt" },
+    { label: "Y tế", value: "Y tế" },
+    { label: "Quà tặng", value: "Quà tặng" },
+    { label: "Thời trang", value: "Thời trang" },
+    { label: "Phí phát sinh", value: "Phí phát sinh" },
     { label: "Khác", value: "Khác" },
   ];
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden max-w-md mx-auto">
-      <header className="flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-center shrink-0 border-b border-primary/10">
+      <header className="sticky top-0 z-50 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-center shrink-0 border-b border-primary/10">
         <h2 className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-tight text-center">
           Chi tiết giao dịch
         </h2>
       </header>
 
-      <div className="px-4 py-3 bg-background-light dark:bg-background-dark border-b border-primary/10 flex flex-col gap-2 shrink-0 z-40 relative">
+      <div className="sticky top-[53px] px-4 py-3 bg-background-light dark:bg-background-dark border-b border-primary/10 flex flex-col gap-2 shrink-0 z-40">
         <div className="flex gap-2">
           <CustomSelect
             value={selectedYear}

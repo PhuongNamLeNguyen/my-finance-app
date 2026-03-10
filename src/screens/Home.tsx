@@ -25,7 +25,7 @@ interface HomeProps {
   onDeleteTransaction: (t: Transaction) => void;
 }
 
-const COLORS = ["#cf6317", "#fcd34d", "#d97706", "#8b5cf6", "#64748b"];
+const COLORS = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
 
 export default React.memo(function Home({
   transactions,
@@ -42,13 +42,14 @@ export default React.memo(function Home({
   const [categoryFilter, setCategoryFilter] = useState<string>("Tất cả");
   const categories = [
     "Tất cả",
-    "Mua sắm",
     "Ăn uống",
-    "Gia đình",
-    "Di chuyển",
-    "Quà tặng",
-    "Y tế",
     "Học tập",
+    "Di chuyển",
+    "Sinh hoạt",
+    "Y tế",
+    "Quà tặng",
+    "Thời trang",
+    "Phí phát sinh",
     "Khác",
   ];
 
@@ -183,7 +184,7 @@ export default React.memo(function Home({
 
   return (
     <main className="max-w-md mx-auto px-4 pb-6">
-      <header className="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md py-4 flex items-center justify-between border-b border-primary/10">
+      <header className="sticky top-0 z-50 bg-background-light dark:bg-background-dark py-4 px-4 -mx-4 flex items-center justify-between border-b border-primary/10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
             <span className="material-symbols-outlined text-primary">
@@ -269,7 +270,7 @@ export default React.memo(function Home({
       <section className="mt-8">
         <div className="flex flex-col mb-3">
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
-            Thống kê theo
+            Thống kê chi tiêu theo
           </h2>
           <div className="flex gap-1 bg-primary/10 p-1 rounded-lg w-fit">
             {["Tuần", "Tháng", "Năm"].map((f) => (
@@ -309,7 +310,7 @@ export default React.memo(function Home({
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-6 gap-4">
+            <div className="flex items-center justify-center mb-6 gap-8">
               <div className="relative w-32 h-32 flex-shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -335,7 +336,7 @@ export default React.memo(function Home({
                 </ResponsiveContainer>
               </div>
 
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex flex-col gap-3">
                 {categoryData.slice(0, 4).map((cat, index) => (
                   <div key={cat.name} className="flex items-center gap-2">
                     <span
@@ -461,13 +462,14 @@ function ManualEntryModal({
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-primary/10 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/50 h-[38px]"
             >
               {[
-                "Mua sắm",
                 "Ăn uống",
-                "Gia đình",
-                "Di chuyển",
-                "Quà tặng",
-                "Y tế",
                 "Học tập",
+                "Di chuyển",
+                "Sinh hoạt",
+                "Y tế",
+                "Quà tặng",
+                "Thời trang",
+                "Phí phát sinh",
                 "Khác",
               ].map((c) => (
                 <option key={c} value={c}>

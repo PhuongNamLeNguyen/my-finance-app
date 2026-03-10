@@ -117,7 +117,7 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
   if (showDeleted) {
     return (
       <div className="relative flex min-h-full w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-xl pb-6">
-        <div className="sticky top-0 z-10 flex items-center bg-background-light/80 dark:bg-background-dark/80 p-4 pb-2 justify-between border-b border-primary/10">
+        <div className="sticky top-0 z-50 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-between border-b border-primary/10">
           <button onClick={() => setShowDeleted(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
@@ -185,7 +185,7 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
 
   return (
     <div className="relative flex min-h-full w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-xl pb-6">
-      <div className="sticky top-0 z-10 flex items-center bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md p-4 pb-2 justify-center border-b border-primary/10">
+      <div className="sticky top-0 z-50 flex items-center bg-background-light dark:bg-background-dark p-4 pb-2 justify-center border-b border-primary/10">
         <h2 className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] text-center">
           Cài đặt
         </h2>
