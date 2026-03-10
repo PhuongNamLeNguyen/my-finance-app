@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Transaction } from "../types";
 import TransactionItem from "../components/TransactionItem";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -22,6 +22,7 @@ interface HomeProps {
   onTransactionClick: (t: Transaction) => void;
   onAddTransaction: (t: Transaction) => void;
   onAddIncome: (t: Transaction) => void;
+  onDeleteTransaction: (t: Transaction) => void;
 }
 
 const COLORS = ["#cf6317", "#fcd34d", "#d97706", "#8b5cf6", "#64748b"];
@@ -33,6 +34,7 @@ export default React.memo(function Home({
   onTransactionClick,
   onAddTransaction,
   onAddIncome,
+  onDeleteTransaction,
 }: HomeProps) {
   const [filter, setFilter] = useState<"Tuần" | "Tháng" | "Năm">("Tuần");
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
@@ -54,6 +56,23 @@ export default React.memo(function Home({
     if (categoryFilter === "Tất cả") return transactions;
     return transactions.filter((t) => t.category === categoryFilter);
   }, [transactions, categoryFilter]);
+
+    const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+
+    useEffect(() => {
+      setLastUpdated(new Date());
+    }, [transactions]);
+
+    const lastUpdatedText = useMemo(() => {
+      const now = new Date();
+      const diffMs = now.getTime() - lastUpdated.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return "Vừa cập nhật";
+      if (diffMins < 60) return `Cập nhật ${diffMins} phút trước`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `Cập nhật ${diffHours} giờ trước`;
+      return `Cập nhật ${Math.floor(diffHours / 24)} ngày trước`;
+    }, [lastUpdated]);
 
   const { currentTotal, previousTotal, currentTransactions } = useMemo(() => {
     const now = new Date();
@@ -206,7 +225,7 @@ export default React.memo(function Home({
                 </div>
               </div>
               <span className="text-xs text-white/70 italic">
-                Cập nhật 2 phút trước
+                {lastUpdatedText}
               </span>
             </div>
           </div>
@@ -218,7 +237,7 @@ export default React.memo(function Home({
       <section className="mt-4">
         <button
           onClick={() => setIsManualIncomeOpen(true)}
-          className="w-full bg-emerald-500 rounded-xl flex items-center justify-center gap-3 text-white shadow-lg shadow-emerald-500/20 hover:scale-[0.98] transition-transform py-3"
+          className="w-full bg-primary rounded-xl flex items-center justify-center gap-3 text-white shadow-lg shadow-primary/20 hover:scale-[0.98] transition-transform py-3"
         >
           <span className="material-symbols-outlined text-2xl">add_circle</span>
           <span className="font-bold">Nhập nguồn thu</span>
@@ -230,7 +249,7 @@ export default React.memo(function Home({
       <section className="flex gap-3">
         <button
           onClick={onUploadClick}
-          className="flex-1 bg-primary rounded-xl flex items-center justify-center gap-2 text-white shadow-lg shadow-primary/20 hover:scale-[0.98] transition-transform py-3"
+          className="flex-1 bg-emerald-500 rounded-xl flex items-center justify-center gap-2 text-white shadow-lg shadow-emerald-500/20 hover:scale-[0.98] transition-transform py-3"
         >
           <span className="material-symbols-outlined text-xl">
             add_a_photo

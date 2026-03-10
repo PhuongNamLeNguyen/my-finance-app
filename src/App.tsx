@@ -13,6 +13,8 @@ import Register from "./screens/Register";
 import ForgotPassword from "./screens/ForgotPassword";
 import { auth, logout } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { subscribeToTransactions, saveTransaction, updateTransaction as updateDbTransaction, deleteTransaction, getTransactionByImageHash, restoreTransaction, permanentlyDeleteTransaction } from "./services/db";
+import { uploadReceiptImage } from "./services/storage";
 
 export default function App() {
   const [userName, setUserName] = useState(() => {
@@ -52,6 +54,7 @@ export default function App() {
         setIsAuthenticated(true);
         setUserId(user.uid);
         setUserEmail(user.email);
+        setActiveTab("home"); // Default to home after login
         document.cookie = "isAuthenticated=true; path=/; max-age=31536000"; // 1 year
         if (user.displayName) {
           setUserName(user.displayName);
@@ -66,38 +69,42 @@ export default function App() {
         } else {
           setUserId("mock-user");
           setUserEmail("mock@example.com");
+          setActiveTab("home"); // Default to home after login
         }
       }
     });
     return () => unsubscribe();
   }, []);
 
-  // Load transactions from localStorage when userId changes
+  // Load transactions from Firestore when userId changes
   useEffect(() => {
     if (!userId) return;
     const savedName = localStorage.getItem(`userName_${userId}`);
     if (savedName) setUserName(savedName);
 
+    // Migrate local storage data to Firestore if needed
     const key = `transactions_${userId}`;
     const saved = localStorage.getItem(key);
     if (saved) {
       try {
-        setTransactions(JSON.parse(saved));
+        const localTransactions: Transaction[] = JSON.parse(saved);
+        if (localTransactions.length > 0) {
+          localTransactions.forEach(t => {
+            saveTransaction(userId, t).catch(console.error);
+          });
+          localStorage.removeItem(key); // Clear local storage after migration
+        }
       } catch (e) {
         console.error("Failed to parse saved transactions");
-        setTransactions([]);
       }
-    } else {
-      setTransactions([]);
     }
-  }, [userId]);
 
-  // Save transactions to localStorage when changed
-  useEffect(() => {
-    if (!userId) return;
-    const key = `transactions_${userId}`;
-    localStorage.setItem(key, JSON.stringify(transactions));
-  }, [transactions, userId]);
+    const unsubscribe = subscribeToTransactions(userId, (data) => {
+      setTransactions(data);
+    });
+
+    return () => unsubscribe();
+  }, [userId]);
 
   // Save userName to localStorage when changed
   useEffect(() => {
@@ -115,17 +122,58 @@ export default function App() {
           const base64DataUrl = await resizeImage(file, 1024, 1024);
           const base64Image = base64DataUrl.split(",")[1];
 
+          // Generate hash for the image to avoid re-processing
+          const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(base64Image));
+          const imageHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+          if (userId) {
+            const existingTx = await getTransactionByImageHash(userId, imageHash);
+            if (existingTx) {
+              console.log("Image already processed, skipping AI analysis.");
+              // We can either return the existing transaction or create a new one with the same AI result
+              // Let's create a new transaction with the same AI result but a new ID
+              const txId = Math.random().toString(36).substring(2, 15);
+              const newTx = {
+                ...existingTx,
+                id: txId,
+                date: new Date().toISOString(), // Use current date for the new transaction
+              };
+              await saveTransaction(userId, newTx);
+              return newTx;
+            }
+          }
+
           // We pass "image/jpeg" because resizeImage converts to JPEG
           const aiResult = await analyzeReceipt(base64Image, "image/jpeg");
 
-          return {
-            id: Math.random().toString(36).substring(2, 15),
+          const txId = Math.random().toString(36).substring(2, 15);
+          let imageUrl = base64DataUrl;
+
+          if (userId) {
+            try {
+              const filename = `receipt_${txId}.jpg`;
+              imageUrl = await uploadReceiptImage(userId, base64DataUrl, filename);
+            } catch (uploadError) {
+              console.error("Lỗi khi upload ảnh lên storage:", uploadError);
+              // Fallback to base64 if upload fails, or you could throw an error
+            }
+          }
+
+          const newTx = {
+            id: txId,
             date: aiResult.date || new Date().toISOString(),
             amount: aiResult.amount || 0,
             content: aiResult.content || "Không rõ",
             category: aiResult.category || "Khác",
-            imageUrl: base64DataUrl,
+            imageUrl: imageUrl,
+            imageHash: imageHash,
+            type: "expense"
           } as Transaction;
+          
+          if (userId) {
+            await saveTransaction(userId, newTx);
+          }
+          return newTx;
         } catch (error) {
           console.error("Lỗi khi phân tích hóa đơn:", error);
           return null;
@@ -136,7 +184,6 @@ export default function App() {
       const newTransactions = results.filter((t): t is Transaction => t !== null);
 
       if (newTransactions.length > 0) {
-        setTransactions((prev) => [...newTransactions, ...prev]);
         showToast(`Đã thêm ${newTransactions.length} giao dịch thành công!`);
       } else {
         showToast("Không có giao dịch nào được thêm thành công.");
@@ -148,16 +195,17 @@ export default function App() {
     }
   };
 
-  const handleUpdateTransaction = (updated: Transaction) => {
-    setTransactions((prev) =>
-      prev.map((t) => (t.id === updated.id ? updated : t)),
-    );
+  const handleUpdateTransaction = async (updated: Transaction) => {
+    if (userId) {
+      await updateDbTransaction(userId, updated);
+    }
     setSelectedTransaction(updated);
   };
 
   const handleLogin = (name: string) => {
     setUserName(name);
     setIsAuthenticated(true);
+    setActiveTab("home"); // Default to home after login
     document.cookie = "isAuthenticated=true; path=/; max-age=31536000"; // 1 year
   };
 
@@ -171,15 +219,46 @@ export default function App() {
     document.cookie = "isAuthenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   };
 
-  const handleAddTransaction = useCallback((t: Transaction) => {
-    setTransactions((prev) => [t, ...prev]);
+  const handleAddTransaction = useCallback(async (t: Transaction) => {
+    if (userId) {
+      await saveTransaction(userId, t);
+    }
     showToast("Đã thêm giao dịch thành công!");
-  }, []);
+  }, [userId]);
 
-  const handleAddIncome = useCallback((t: Transaction) => {
-    setTransactions((prev) => [t, ...prev]);
+  const handleAddIncome = useCallback(async (t: Transaction) => {
+    if (userId) {
+      await saveTransaction(userId, t);
+    }
     showToast("Đã thêm nguồn thu thành công!");
-  }, []);
+  }, [userId]);
+
+  const handleDeleteTransaction = useCallback(async (t: Transaction) => {
+    if (userId && userId !== "mock-user") {
+      await deleteTransaction(userId, t.id);
+    } else {
+      setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, isDeleted: true } : tx));
+    }
+    showToast("Đã xóa giao dịch!");
+  }, [userId]);
+
+  const handleRestoreTransaction = useCallback(async (t: Transaction) => {
+    if (userId && userId !== "mock-user") {
+      await restoreTransaction(userId, t.id);
+    } else {
+      setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, isDeleted: false } : tx));
+    }
+    showToast("Đã khôi phục giao dịch!");
+  }, [userId]);
+
+  const handlePermanentDeleteTransaction = useCallback(async (t: Transaction) => {
+    if (userId && userId !== "mock-user") {
+      await permanentlyDeleteTransaction(userId, t.id);
+    } else {
+      setTransactions(prev => prev.filter(tx => tx.id !== t.id));
+    }
+    showToast("Đã xóa vĩnh viễn giao dịch!");
+  }, [userId]);
 
   const handleUploadClick = useCallback(() => {
     setIsUploadSheetOpen(true);
@@ -207,21 +286,23 @@ export default function App() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
         {activeTab === "home" && (
           <Home
-            transactions={transactions}
+            transactions={transactions.filter(t => !t.isDeleted)}
             userName={userName}
             onUploadClick={handleUploadClick}
             onTransactionClick={setSelectedTransaction}
             onAddTransaction={handleAddTransaction}
             onAddIncome={handleAddIncome}
+            onDeleteTransaction={handleDeleteTransaction}
           />
         )}
         {activeTab === "transactions" && (
           <Transactions
-            transactions={transactions}
+            transactions={transactions.filter(t => !t.isDeleted)}
             onTransactionClick={setSelectedTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
           />
         )}
-        {activeTab === "settings" && <Settings onLogout={handleLogout} userName={userName} onUserNameChange={setUserName} userEmail={userEmail} />}
+        {activeTab === "settings" && <Settings onLogout={handleLogout} userName={userName} onUserNameChange={setUserName} userEmail={userEmail} deletedTransactions={transactions.filter(t => t.isDeleted)} onRestoreTransaction={handleRestoreTransaction} onPermanentDeleteTransaction={handlePermanentDeleteTransaction} />}
       </div>
 
       {/* Overlays */}

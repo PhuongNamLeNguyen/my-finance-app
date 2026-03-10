@@ -1,10 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { auth } from "../firebase";
-import { updatePassword } from "firebase/auth";
+import React, { useState, useEffect, useRef } from "react";
+import { auth, storage } from "../firebase";
+import { updatePassword, updateProfile } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { Transaction } from "../types";
+import TransactionItem from "../components/TransactionItem";
+import { restoreTransaction, permanentlyDeleteTransaction } from "../services/db";
 
-export default function Settings({ onLogout, userName, onUserNameChange, userEmail }: { onLogout: () => void, userName: string, onUserNameChange: (name: string) => void, userEmail: string | null }) {
+export default function Settings({ onLogout, userName, onUserNameChange, userEmail, deletedTransactions, onRestoreTransaction, onPermanentDeleteTransaction }: { onLogout: () => void, userName: string, onUserNameChange: (name: string) => void, userEmail: string | null, deletedTransactions: Transaction[], onRestoreTransaction: (t: Transaction) => void, onPermanentDeleteTransaction: (t: Transaction) => void }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [themeColor, setThemeColor] = useState("#cf6317");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(auth.currentUser?.photoURL || null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -55,6 +63,71 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
     alert("Chức năng đổi phông chữ đang được phát triển.");
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !auth.currentUser) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const storageRef = ref(storage, `avatars/${auth.currentUser.uid}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      await updateProfile(auth.currentUser, { photoURL: url });
+      setAvatarUrl(url);
+      alert("Cập nhật ảnh đại diện thành công!");
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      alert("Lỗi khi tải ảnh lên. Vui lòng thử lại.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleRestore = async (t: Transaction) => {
+    onRestoreTransaction(t);
+  };
+
+  const handlePermanentDelete = async (t: Transaction) => {
+    if (confirm("Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này?")) {
+      onPermanentDeleteTransaction(t);
+    }
+  };
+
+  if (showDeleted) {
+    return (
+      <div className="relative flex min-h-full w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-xl pb-6">
+        <div className="sticky top-0 z-10 flex items-center bg-background-light/80 dark:bg-background-dark/80 p-4 pb-2 justify-between border-b border-primary/10">
+          <button onClick={() => setShowDeleted(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h2 className="text-slate-900 dark:text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] text-center">
+            Giao dịch đã xóa
+          </h2>
+          <div className="w-10"></div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {deletedTransactions.length === 0 ? (
+            <p className="text-center text-slate-500 mt-10">Không có giao dịch nào đã xóa.</p>
+          ) : (
+            deletedTransactions.map(t => (
+              <TransactionItem 
+                key={t.id} 
+                transaction={t} 
+                onClick={() => {}} 
+                onDelete={() => handlePermanentDelete(t)}
+                onRestore={() => handleRestore(t)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-full w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark shadow-xl pb-6">
       <div className="sticky top-0 z-10 flex items-center bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md p-4 pb-2 justify-center border-b border-primary/10">
@@ -66,18 +139,24 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
       <div className="flex-1 overflow-y-auto">
         <div className="flex p-6 border-b border-primary/5">
           <div className="flex w-full items-center gap-4">
-            <div className="relative group">
+            <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
               <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-20 border-2 border-primary/20 bg-slate-200 dark:bg-slate-800"
+                className={`bg-center bg-no-repeat aspect-square bg-cover rounded-full size-20 border-2 border-primary/20 bg-slate-200 dark:bg-slate-800 ${isUploadingAvatar ? 'opacity-50' : ''}`}
                 style={{
-                  backgroundImage: `url('https://placehold.co/150x150?text=Avatar')`,
+                  backgroundImage: `url('${avatarUrl || 'https://placehold.co/150x150?text=Avatar'}')`,
                 }}
               ></div>
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
               <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1 border-2 border-background-light dark:border-background-dark">
                 <span className="material-symbols-outlined text-sm !text-[16px]">
                   edit
                 </span>
               </div>
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleAvatarChange} />
             </div>
             <div className="flex flex-col justify-center">
               <p className="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-[-0.015em]">
@@ -223,6 +302,27 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
 
           <section>
             <h3 className="text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-wider px-6 mb-2">
+              Dữ liệu
+            </h3>
+            <div className="space-y-1">
+              <button onClick={() => setShowDeleted(true)} className="w-full flex items-center gap-4 px-6 py-3 hover:bg-primary/5 transition-colors group">
+                <div className="text-primary flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-10">
+                  <span className="material-symbols-outlined">delete</span>
+                </div>
+                <div className="flex flex-1 items-center justify-between border-b border-primary/5 pb-1 group-last:border-none">
+                  <p className="text-slate-800 dark:text-slate-200 text-base font-medium">
+                    Giao dịch đã xóa
+                  </p>
+                  <span className="material-symbols-outlined text-slate-400">
+                    chevron_right
+                  </span>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-wider px-6 mb-2">
               Khác
             </h3>
             <div className="space-y-1">
@@ -253,6 +353,9 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
           <div className="text-center pb-8">
             <p className="text-slate-400 text-xs">
               Phiên bản 2.4.0 (Build 102)
+            </p>
+            <p className="text-slate-400 text-xs mt-1">
+              Tạo ra bởi PhuongLNN
             </p>
           </div>
         </div>

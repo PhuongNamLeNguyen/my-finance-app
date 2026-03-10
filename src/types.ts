@@ -19,5 +19,7 @@ export interface Transaction {
   content: string;
   category: Category;
   imageUrl?: string;
+  imageHash?: string;
   type?: "income" | "expense";
+  isDeleted?: boolean;
 }

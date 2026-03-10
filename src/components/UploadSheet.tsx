@@ -15,7 +15,7 @@ export default function UploadSheet({
   if (!isOpen) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files = e.target.files ? (Array.from(e.target.files) as File[]) : [];
     if (files.length > 0) {
       onUpload(files);
     }

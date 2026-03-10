@@ -16,6 +16,7 @@ import {
 interface TransactionsProps {
   transactions: Transaction[];
   onTransactionClick: (t: Transaction) => void;
+  onDeleteTransaction: (t: Transaction) => void;
 }
 
 function CustomSelect({
@@ -90,6 +91,7 @@ function CustomSelect({
 export default React.memo(function Transactions({
   transactions,
   onTransactionClick,
+  onDeleteTransaction,
 }: TransactionsProps) {
   const [selectedYear, setSelectedYear] = useState<string>(
     new Date().getFullYear().toString(),
@@ -272,7 +274,7 @@ export default React.memo(function Transactions({
                   <div
                     key={dateStr}
                     onClick={() => setSelectedDate(day)}
-                    className={`p-1 h-14 relative cursor-pointer transition-colors ${
+                    className={`p-1 min-h-[4rem] relative cursor-pointer transition-colors ${
                       !isCurrentMonth
                         ? "bg-background-light dark:bg-background-dark opacity-40"
                         : isSelected
@@ -290,7 +292,7 @@ export default React.memo(function Transactions({
                       {format(day, "d")}
                     </span>
                     {totalIncome > 0 && (
-                      <div className="mt-1">
+                      <div className="mt-0">
                         <p className="text-[9px] text-emerald-500 leading-tight font-bold">
                           +
                           {totalIncome >= 1000000
@@ -300,7 +302,7 @@ export default React.memo(function Transactions({
                       </div>
                     )}
                     {totalExpense > 0 && (
-                      <div className="mt-0.5">
+                      <div className="mt-0">
                         <p className="text-[9px] text-red-500 leading-tight font-bold">
                           -
                           {totalExpense >= 1000000
@@ -328,6 +330,7 @@ export default React.memo(function Transactions({
                       key={t.id}
                       transaction={t}
                       onClick={onTransactionClick}
+                      onDelete={onDeleteTransaction}
                     />
                   ))}
                   {selectedDateTransactions.length === 0 && (
@@ -354,6 +357,7 @@ export default React.memo(function Transactions({
                       <TransactionItem
                         transaction={t}
                         onClick={onTransactionClick}
+                        onDelete={onDeleteTransaction}
                       />
                     </div>
                   ))}
