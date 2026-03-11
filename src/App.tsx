@@ -41,15 +41,22 @@ export default function App() {
     document.documentElement.style.setProperty('--primary-color', themeColor);
   }, [themeColor]);
 
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
   // Listen to Firebase Auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        const localAvatar = localStorage.getItem(`avatar_${user.uid}`);
+        setAvatarUrl(localAvatar || user.photoURL);
+        
         // Prevent auto-login if email is not verified (for password accounts)
         const isPasswordAccount = user.providerData.some(p => p.providerId === 'password');
         if (isPasswordAccount && !user.emailVerified) {
@@ -73,10 +80,13 @@ export default function App() {
           setIsAuthenticated(false);
           setUserId(null);
           setUserEmail(null);
+          setAvatarUrl(null);
         } else {
           setUserId("mock-user");
           setUserEmail("mock@example.com");
-          setActiveTab("home"); // Default to home after login
+          // Don't force home tab if already logged in (mock)
+          // setActiveTab("home"); 
+          setAvatarUrl(localStorage.getItem("mock_avatar"));
         }
       }
     });
@@ -383,6 +393,7 @@ export default function App() {
           <Home
             transactions={transactions.filter(t => !t.isDeleted)}
             userName={userName}
+            avatarUrl={avatarUrl}
             onUploadClick={handleUploadClick}
             onTransactionClick={setSelectedTransaction}
             onAddTransaction={handleAddTransaction}
@@ -398,7 +409,24 @@ export default function App() {
             onDeleteTransaction={handleDeleteTransaction}
           />
         )}
-        {activeTab === "settings" && <Settings onLogout={handleLogout} userName={userName} onUserNameChange={setUserName} userEmail={userEmail} deletedTransactions={transactions.filter(t => t.isDeleted)} onRestoreTransaction={handleRestoreTransaction} onPermanentDeleteTransaction={handlePermanentDeleteTransaction} themeColor={themeColor} onThemeColorChange={(color) => { setThemeColor(color); localStorage.setItem("themeColor", color); }} />}
+        {activeTab === "settings" && (
+          <Settings 
+            onLogout={handleLogout} 
+            userName={userName} 
+            onUserNameChange={setUserName} 
+            userEmail={userEmail} 
+            deletedTransactions={transactions.filter(t => t.isDeleted)} 
+            onRestoreTransaction={handleRestoreTransaction} 
+            onPermanentDeleteTransaction={handlePermanentDeleteTransaction} 
+            themeColor={themeColor} 
+            onThemeColorChange={(color) => { setThemeColor(color); localStorage.setItem("themeColor", color); }} 
+            avatarUrl={avatarUrl} 
+            setAvatarUrl={setAvatarUrl} 
+            isUploadingAvatar={isUploadingAvatar}
+            setIsUploadingAvatar={setIsUploadingAvatar}
+            showToast={showToast} 
+          />
+        )}
       </div>
 
       {/* Overlays */}

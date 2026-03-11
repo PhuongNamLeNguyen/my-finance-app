@@ -1,33 +1,47 @@
 import React, { useState, useEffect, useRef } from "react";
 import { auth, storage } from "../firebase";
 import { updatePassword, updateProfile, EmailAuthProvider, reauthenticateWithCredential, onAuthStateChanged } from "firebase/auth";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, uploadString } from "firebase/storage";
 import { Transaction } from "../types";
 import TransactionItem from "../components/TransactionItem";
 import { restoreTransaction, permanentlyDeleteTransaction } from "../services/db";
 import { motion, AnimatePresence } from "framer-motion";
+import { resizeImage } from "../utils/image";
 
-export default function Settings({ onLogout, userName, onUserNameChange, userEmail, deletedTransactions, onRestoreTransaction, onPermanentDeleteTransaction, themeColor, onThemeColorChange }: { onLogout: () => void, userName: string, onUserNameChange: (name: string) => void, userEmail: string | null, deletedTransactions: Transaction[], onRestoreTransaction: (t: Transaction) => void, onPermanentDeleteTransaction: (t: Transaction) => void, themeColor: string, onThemeColorChange: (color: string) => void }) {
+export default function Settings({ 
+  onLogout, 
+  userName, 
+  onUserNameChange, 
+  userEmail, 
+  deletedTransactions, 
+  onRestoreTransaction, 
+  onPermanentDeleteTransaction, 
+  themeColor, 
+  onThemeColorChange, 
+  avatarUrl, 
+  setAvatarUrl, 
+  isUploadingAvatar,
+  setIsUploadingAvatar,
+  showToast 
+}: { 
+  onLogout: () => void, 
+  userName: string, 
+  onUserNameChange: (name: string) => void, 
+  userEmail: string | null, 
+  deletedTransactions: Transaction[], 
+  onRestoreTransaction: (t: Transaction) => void, 
+  onPermanentDeleteTransaction: (t: Transaction) => void, 
+  themeColor: string, 
+  onThemeColorChange: (color: string) => void, 
+  avatarUrl: string | null, 
+  setAvatarUrl: (url: string | null) => void, 
+  isUploadingAvatar: boolean,
+  setIsUploadingAvatar: (val: boolean) => void,
+  showToast: (msg: string) => void 
+}) {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
-    if (auth.currentUser?.photoURL) return auth.currentUser.photoURL;
-    if (!auth.currentUser) return localStorage.getItem("mock_avatar");
-    return null;
-  });
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<{t: Transaction, resolve: (value: boolean) => void} | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user?.photoURL) {
-        setAvatarUrl(user.photoURL);
-      } else if (!user) {
-        setAvatarUrl(localStorage.getItem("mock_avatar"));
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [oldPassword, setOldPassword] = useState(() => sessionStorage.getItem("draft_pwd_old") || "");
@@ -75,7 +89,7 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
 
   const handleChangePassword = () => {
     if (!auth.currentUser) {
-      alert("Bạn cần đăng nhập để thực hiện chức năng này.");
+      showToast("Bạn cần đăng nhập để thực hiện chức năng này.");
       return;
     }
     setOldPassword("");
@@ -114,7 +128,7 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
       await reauthenticateWithCredential(auth.currentUser, credential);
       
       await updatePassword(auth.currentUser, newPassword);
-      alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+      showToast("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
       sessionStorage.removeItem("draft_pwd_old");
       sessionStorage.removeItem("draft_pwd_new");
       sessionStorage.removeItem("draft_pwd_confirm");
@@ -134,43 +148,81 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
   };
 
   const handleSupport = () => {
-    alert("Chức năng hỗ trợ & phản hồi đang được phát triển.");
+    showToast("Chức năng hỗ trợ & phản hồi đang được phát triển.");
   };
 
   const handleFontChange = () => {
-    alert("Chức năng đổi phông chữ đang được phát triển.");
+    showToast("Chức năng đổi phông chữ đang được phát triển.");
   };
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!auth.currentUser) {
-      // Handle mock user
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAvatarUrl(base64String);
-        localStorage.setItem("mock_avatar", base64String);
-        alert("Cập nhật ảnh đại diện thành công (chế độ dùng thử)!");
-      };
-      reader.readAsDataURL(file);
-      if (e.target) e.target.value = '';
+    if (!file.type.startsWith('image/')) {
+      showToast("Vui lòng chọn tệp hình ảnh.");
       return;
     }
 
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      showToast("Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 10MB.");
+      return;
+    }
+
+    if (!auth.currentUser) {
+      // Handle mock user
+      try {
+        const base64String = await resizeImage(file, 256, 256);
+        setAvatarUrl(base64String);
+        localStorage.setItem("mock_avatar", base64String);
+        showToast("Cập nhật ảnh đại diện thành công (chế độ dùng thử)!");
+      } catch (error) {
+        console.error("Error resizing mock avatar:", error);
+        showToast("Lỗi khi xử lý ảnh. Vui lòng thử lại.");
+      } finally {
+        if (e.target) e.target.value = '';
+      }
+      return;
+    }
+
+    if (isUploadingAvatar) return;
     setIsUploadingAvatar(true);
+    
+    // Safety timeout
+    const safetyTimeout = setTimeout(() => {
+      setIsUploadingAvatar(false);
+    }, 20000);
+
     try {
-      const storageRef = ref(storage, `avatars/${auth.currentUser.uid}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      await updateProfile(auth.currentUser, { photoURL: url });
-      setAvatarUrl(url);
-      alert("Cập nhật ảnh đại diện thành công!");
+      const base64DataUrl = await resizeImage(file, 256, 256);
+      
+      // Update local state and localStorage immediately
+      setAvatarUrl(base64DataUrl);
+      localStorage.setItem(`avatar_${auth.currentUser.uid}`, base64DataUrl);
+
+      try {
+        const storageRef = ref(storage, `avatars/${auth.currentUser.uid}.jpg`);
+        await uploadString(storageRef, base64DataUrl, 'data_url');
+        const url = await getDownloadURL(storageRef);
+        
+        await updateProfile(auth.currentUser, { photoURL: url });
+        
+        setAvatarUrl(url);
+        localStorage.setItem(`avatar_${auth.currentUser.uid}`, url);
+        
+        showToast("Cập nhật ảnh đại diện thành công!");
+      } catch (storageError: any) {
+        console.error("Storage upload failed, using local fallback:", storageError);
+        try {
+          await updateProfile(auth.currentUser, { photoURL: base64DataUrl });
+        } catch (e) {}
+        showToast("Cập nhật ảnh đại diện thành công (lưu cục bộ)!");
+      }
     } catch (error) {
-      console.error("Error uploading avatar:", error);
-      alert("Lỗi khi tải ảnh lên. Vui lòng thử lại.");
+      console.error("Error processing avatar:", error);
+      showToast("Lỗi khi xử lý ảnh. Vui lòng thử lại.");
     } finally {
+      clearTimeout(safetyTimeout);
       setIsUploadingAvatar(false);
       if (e.target) {
         e.target.value = '';
@@ -285,22 +337,37 @@ export default function Settings({ onLogout, userName, onUserNameChange, userEma
           <div className="flex w-full items-center gap-4">
             <label className="relative group cursor-pointer block">
               <div
-                className={`bg-center bg-no-repeat aspect-square bg-cover rounded-full size-20 border-2 border-primary/20 bg-slate-200 dark:bg-slate-800 ${isUploadingAvatar ? 'opacity-50' : ''}`}
-                style={{
-                  backgroundImage: `url('${avatarUrl || 'https://placehold.co/150x150?text=Avatar'}')`,
-                }}
-              ></div>
+                className={`aspect-square rounded-full size-20 border-2 border-primary/20 bg-primary/10 flex items-center justify-center text-primary font-bold text-3xl overflow-hidden ${isUploadingAvatar ? 'opacity-50' : ''}`}
+              >
+                {avatarUrl ? (
+                  <img 
+                    key={avatarUrl}
+                    src={avatarUrl} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  userName.charAt(0)
+                )}
+              </div>
               {isUploadingAvatar && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
               )}
-              <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-1 border-2 border-background-light dark:border-background-dark">
-                <span className="material-symbols-outlined text-sm !text-[16px]">
+              <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full w-7 h-7 flex items-center justify-center border-2 border-background-light dark:border-background-dark shadow-sm">
+                <span className="material-symbols-outlined !text-[16px]">
                   edit
                 </span>
               </div>
-              <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+              <input 
+                key={isUploadingAvatar ? 'uploading' : 'idle'}
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                onChange={handleAvatarChange} 
+              />
             </label>
             <div className="flex flex-col justify-center">
               <p className="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-[-0.015em]">

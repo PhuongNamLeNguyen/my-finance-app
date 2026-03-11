@@ -18,6 +18,7 @@ import {
 interface HomeProps {
   transactions: Transaction[];
   userName: string;
+  avatarUrl?: string | null;
   onUploadClick: () => void;
   onTransactionClick: (t: Transaction) => void;
   onAddTransaction: (t: Transaction) => void;
@@ -31,6 +32,7 @@ const COLORS = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"
 export default React.memo(function Home({
   transactions,
   userName,
+  avatarUrl,
   onUploadClick,
   onTransactionClick,
   onAddTransaction,
@@ -188,10 +190,17 @@ export default React.memo(function Home({
     <main className="max-w-md mx-auto px-4 pb-6">
       <header className="sticky top-0 z-50 bg-background-light dark:bg-background-dark py-4 px-4 -mx-4 flex items-center justify-between border-b border-primary/10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary">
-              account_circle
-            </span>
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden">
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt="Avatar" 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              userName.charAt(0)
+            )}
           </div>
           <div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
