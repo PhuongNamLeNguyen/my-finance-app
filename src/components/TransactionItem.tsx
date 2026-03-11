@@ -137,7 +137,7 @@ export default function TransactionItem({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-xl mb-3">
+    <div className="relative overflow-hidden rounded-xl">
       {/* Backgrounds */}
       <div className={`absolute inset-0 flex items-center justify-between rounded-xl overflow-hidden transition-colors duration-200 ${dragDirection === 'left' && onDelete ? 'bg-red-500' : dragDirection === 'right' && onRestore ? 'bg-emerald-500' : 'bg-slate-100 dark:bg-slate-800'}`}>
         {/* Restore Background (Left) */}

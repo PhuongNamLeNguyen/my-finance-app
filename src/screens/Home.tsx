@@ -23,6 +23,7 @@ interface HomeProps {
   onAddTransaction: (t: Transaction) => void;
   onAddIncome: (t: Transaction) => void;
   onDeleteTransaction: (t: Transaction) => void;
+  themeColor?: string;
 }
 
 const COLORS = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#f97316"];
@@ -35,6 +36,7 @@ export default React.memo(function Home({
   onAddTransaction,
   onAddIncome,
   onDeleteTransaction,
+  themeColor = "#cf6317",
 }: HomeProps) {
   const [filter, setFilter] = useState<"Tuần" | "Tháng" | "Năm">("Tuần");
   const [isManualEntryOpen, setIsManualEntryOpen] = useState(false);
@@ -250,7 +252,7 @@ export default React.memo(function Home({
       <section className="flex gap-3">
         <button
           onClick={onUploadClick}
-          className="flex-1 bg-emerald-500 rounded-xl flex items-center justify-center gap-2 text-white shadow-lg shadow-emerald-500/20 hover:scale-[0.98] transition-transform py-3"
+          className={`flex-1 rounded-xl flex items-center justify-center gap-2 text-white shadow-lg hover:scale-[0.98] transition-transform py-3 ${themeColor === '#cf6317' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-[#cf6317] shadow-[#cf6317]/20'}`}
         >
           <span className="material-symbols-outlined text-xl">
             add_a_photo
@@ -260,7 +262,7 @@ export default React.memo(function Home({
 
         <button
           onClick={() => setIsManualEntryOpen(true)}
-          className="flex-1 bg-emerald-500 rounded-xl flex items-center justify-center gap-2 text-white shadow-lg shadow-emerald-500/20 hover:scale-[0.98] transition-transform py-3"
+          className={`flex-1 rounded-xl flex items-center justify-center gap-2 text-white shadow-lg hover:scale-[0.98] transition-transform py-3 ${themeColor === '#cf6317' ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-[#cf6317] shadow-[#cf6317]/20'}`}
         >
           <span className="material-symbols-outlined text-xl">edit_note</span>
           <span className="font-bold text-sm">Nhập giao dịch</span>
@@ -388,6 +390,12 @@ export default React.memo(function Home({
   );
 });
 
+const getVSTTime = () => {
+  const date = new Date();
+  const vstDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  return vstDate.toISOString().slice(0, 16);
+};
+
 function ManualEntryModal({
   onClose,
   onSubmit,
@@ -395,11 +403,30 @@ function ManualEntryModal({
   onClose: () => void;
   onSubmit: (t: Transaction) => void;
 }) {
-  const [amount, setAmount] = useState("");
-  const [displayAmount, setDisplayAmount] = useState("");
-  const [content, setContent] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 16));
-  const [category, setCategory] = useState("Khác");
+  const [amount, setAmount] = useState(() => localStorage.getItem("draft_expense_amount") || "");
+  const [displayAmount, setDisplayAmount] = useState(() => {
+    const amt = localStorage.getItem("draft_expense_amount");
+    return amt ? Number(amt).toLocaleString("en-US") : "";
+  });
+  const [content, setContent] = useState(() => localStorage.getItem("draft_expense_content") || "");
+  const [date, setDate] = useState(() => localStorage.getItem("draft_expense_date") || getVSTTime());
+  const [category, setCategory] = useState(() => localStorage.getItem("draft_expense_category") || "Khác");
+
+  useEffect(() => {
+    localStorage.setItem("draft_expense_amount", amount);
+  }, [amount]);
+
+  useEffect(() => {
+    localStorage.setItem("draft_expense_content", content);
+  }, [content]);
+
+  useEffect(() => {
+    localStorage.setItem("draft_expense_date", date);
+  }, [date]);
+
+  useEffect(() => {
+    localStorage.setItem("draft_expense_category", category);
+  }, [category]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/,/g, "");
@@ -420,6 +447,12 @@ function ManualEntryModal({
       date: new Date(date).toISOString(),
       category: category as any,
     };
+
+    // Clear draft data
+    localStorage.removeItem("draft_expense_amount");
+    localStorage.removeItem("draft_expense_content");
+    localStorage.removeItem("draft_expense_date");
+    localStorage.removeItem("draft_expense_category");
 
     onSubmit(newTransaction);
   };
@@ -446,6 +479,7 @@ function ManualEntryModal({
             <input
               type="tel"
               required
+              autoFocus
               value={displayAmount}
               onChange={handleAmountChange}
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-primary/10 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
@@ -521,11 +555,30 @@ function ManualIncomeModal({
   onClose: () => void;
   onSubmit: (t: Transaction) => void;
 }) {
-  const [amount, setAmount] = useState("");
-  const [displayAmount, setDisplayAmount] = useState("");
-  const [content, setContent] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 16));
-  const [category, setCategory] = useState("Tiền lương");
+  const [amount, setAmount] = useState(() => localStorage.getItem("draft_income_amount") || "");
+  const [displayAmount, setDisplayAmount] = useState(() => {
+    const amt = localStorage.getItem("draft_income_amount");
+    return amt ? Number(amt).toLocaleString("en-US") : "";
+  });
+  const [content, setContent] = useState(() => localStorage.getItem("draft_income_content") || "");
+  const [date, setDate] = useState(() => localStorage.getItem("draft_income_date") || getVSTTime());
+  const [category, setCategory] = useState(() => localStorage.getItem("draft_income_category") || "Tiền lương");
+
+  useEffect(() => {
+    localStorage.setItem("draft_income_amount", amount);
+  }, [amount]);
+
+  useEffect(() => {
+    localStorage.setItem("draft_income_content", content);
+  }, [content]);
+
+  useEffect(() => {
+    localStorage.setItem("draft_income_date", date);
+  }, [date]);
+
+  useEffect(() => {
+    localStorage.setItem("draft_income_category", category);
+  }, [category]);
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value.replace(/,/g, "");
@@ -547,6 +600,12 @@ function ManualIncomeModal({
       category: category as any,
       type: "income",
     };
+
+    // Clear draft data
+    localStorage.removeItem("draft_income_amount");
+    localStorage.removeItem("draft_income_content");
+    localStorage.removeItem("draft_income_date");
+    localStorage.removeItem("draft_income_category");
 
     onSubmit(newTransaction);
   };
@@ -573,6 +632,7 @@ function ManualIncomeModal({
             <input
               type="tel"
               required
+              autoFocus
               value={displayAmount}
               onChange={handleAmountChange}
               className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-primary/10 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/50"

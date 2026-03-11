@@ -2,13 +2,29 @@ import React, { useState } from 'react';
 import { registerWithEmail } from '../firebase';
 
 export default function Register({ onRegister, onBackToLogin }: { onRegister: (name: string) => void, onBackToLogin: () => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState(() => sessionStorage.getItem("draft_reg_name") || "");
+  const [email, setEmail] = useState(() => sessionStorage.getItem("draft_reg_email") || "");
+  const [password, setPassword] = useState(() => sessionStorage.getItem("draft_reg_password") || "");
+  const [confirmPassword, setConfirmPassword] = useState(() => sessionStorage.getItem("draft_reg_confirm") || "");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  React.useEffect(() => {
+    sessionStorage.setItem("draft_reg_name", name);
+  }, [name]);
+
+  React.useEffect(() => {
+    sessionStorage.setItem("draft_reg_email", email);
+  }, [email]);
+
+  React.useEffect(() => {
+    sessionStorage.setItem("draft_reg_password", password);
+  }, [password]);
+
+  React.useEffect(() => {
+    sessionStorage.setItem("draft_reg_confirm", confirmPassword);
+  }, [confirmPassword]);
 
   const handleRegister = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -29,6 +45,10 @@ export default function Register({ onRegister, onBackToLogin }: { onRegister: (n
     try {
       const user = await registerWithEmail(email, password, name);
       if (user) {
+        sessionStorage.removeItem("draft_reg_name");
+        sessionStorage.removeItem("draft_reg_email");
+        sessionStorage.removeItem("draft_reg_password");
+        sessionStorage.removeItem("draft_reg_confirm");
         setIsSuccess(true);
       }
     } catch (err: any) {

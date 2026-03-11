@@ -325,14 +325,15 @@ export default React.memo(function Transactions({
                 <h3 className="mt-6 text-sm font-bold text-primary/80 uppercase tracking-widest">
                   Chi tiết ngày {format(selectedDate, "dd/MM")}
                 </h3>
-                <div className="mt-2 space-y-3 pb-8">
+                <div className="mt-2 flex flex-col gap-[2px] pb-8">
                   {selectedDateTransactions.map((t) => (
-                    <TransactionItem
-                      key={t.id}
-                      transaction={t}
-                      onClick={onTransactionClick}
-                      onDelete={onDeleteTransaction}
-                    />
+                    <div key={t.id} className="px-4">
+                      <TransactionItem
+                        transaction={t}
+                        onClick={onTransactionClick}
+                        onDelete={onDeleteTransaction}
+                      />
+                    </div>
                   ))}
                   {selectedDateTransactions.length === 0 && (
                     <p className="text-center text-slate-500 py-4 text-sm">
@@ -352,9 +353,9 @@ export default React.memo(function Transactions({
                     {getDayLabel(dateStr)}
                   </h3>
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-[2px] py-2">
                   {grouped[dateStr].map((t) => (
-                    <div key={t.id} className="px-4 py-1">
+                    <div key={t.id} className="px-4">
                       <TransactionItem
                         transaction={t}
                         onClick={onTransactionClick}

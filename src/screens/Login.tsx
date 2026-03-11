@@ -2,10 +2,18 @@ import React, { useState } from 'react';
 import { loginWithEmail, logout } from '../firebase';
 
 export default function Login({ onLogin, onForgotPassword, onRegister }: { onLogin: (name: string) => void, onForgotPassword: () => void, onRegister: () => void }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState(() => sessionStorage.getItem("draft_login_username") || "");
+  const [password, setPassword] = useState(() => sessionStorage.getItem("draft_login_password") || "");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    sessionStorage.setItem("draft_login_username", username);
+  }, [username]);
+
+  React.useEffect(() => {
+    sessionStorage.setItem("draft_login_password", password);
+  }, [password]);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -16,6 +24,8 @@ export default function Login({ onLogin, onForgotPassword, onRegister }: { onLog
     // Fallback for mock login
     if (username === "abc" && password === "1") {
       setError("");
+      sessionStorage.removeItem("draft_login_username");
+      sessionStorage.removeItem("draft_login_password");
       onLogin("Nguyễn Văn An");
       return;
     }
@@ -30,6 +40,8 @@ export default function Login({ onLogin, onForgotPassword, onRegister }: { onLog
           setError("Vui lòng xác thực email của bạn trước khi đăng nhập. Kiểm tra hộp thư đến (hoặc thư rác).");
           return;
         }
+        sessionStorage.removeItem("draft_login_username");
+        sessionStorage.removeItem("draft_login_password");
         onLogin(user.displayName || "Người dùng");
       }
     } catch (err: any) {

@@ -33,6 +33,13 @@ export default function App() {
     useState<Transaction | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [themeColor, setThemeColor] = useState(() => {
+    return localStorage.getItem("themeColor") || "#cf6317";
+  });
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--primary-color', themeColor);
+  }, [themeColor]);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -82,6 +89,20 @@ export default function App() {
     const savedName = localStorage.getItem(`userName_${userId}`);
     if (savedName) setUserName(savedName);
 
+    if (userId === "mock-user") {
+      const saved = localStorage.getItem(`transactions_mock-user`);
+      if (saved) {
+        try {
+          setTransactions(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to parse saved transactions");
+        }
+      } else {
+        setTransactions([]);
+      }
+      return;
+    }
+
     // Migrate local storage data to Firestore if needed
     const key = `transactions_${userId}`;
     const saved = localStorage.getItem(key);
@@ -126,7 +147,7 @@ export default function App() {
           const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(base64Image));
           const imageHash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-          if (userId) {
+          if (userId && userId !== "mock-user") {
             const existingTx = await getTransactionByImageHash(userId, imageHash);
             if (existingTx) {
               console.log("Image already processed, skipping AI analysis.");
@@ -149,7 +170,7 @@ export default function App() {
           const txId = Math.random().toString(36).substring(2, 15);
           let imageUrl = base64DataUrl;
 
-          if (userId) {
+          if (userId && userId !== "mock-user") {
             try {
               const filename = `receipt_${txId}.jpg`;
               imageUrl = await uploadReceiptImage(userId, base64DataUrl, filename);
@@ -170,7 +191,13 @@ export default function App() {
             type: "expense"
           } as Transaction;
           
-          if (userId) {
+          if (userId === "mock-user") {
+            setTransactions(prev => {
+              const updatedTx = [newTx, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+              localStorage.setItem(`transactions_mock-user`, JSON.stringify(updatedTx));
+              return updatedTx;
+            });
+          } else if (userId) {
             await saveTransaction(userId, newTx);
           }
           return newTx;
@@ -196,10 +223,24 @@ export default function App() {
   };
 
   const handleUpdateTransaction = async (updated: Transaction) => {
-    if (userId) {
-      await updateDbTransaction(userId, updated);
+    if (userId === "mock-user") {
+      setTransactions(prev => {
+        const newTx = prev.map(tx => tx.id === updated.id ? updated : tx).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        localStorage.setItem(`transactions_mock-user`, JSON.stringify(newTx));
+        return newTx;
+      });
+      setSelectedTransaction(updated);
+      showToast("Đã cập nhật giao dịch!");
+    } else if (userId) {
+      try {
+        await updateDbTransaction(userId, updated);
+        setSelectedTransaction(updated);
+        showToast("Đã cập nhật giao dịch!");
+      } catch (error) {
+        console.error("Error updating transaction:", error);
+        showToast("Lỗi: Không thể cập nhật giao dịch.");
+      }
     }
-    setSelectedTransaction(updated);
   };
 
   const handleLogin = (name: string) => {
@@ -220,44 +261,98 @@ export default function App() {
   };
 
   const handleAddTransaction = useCallback(async (t: Transaction) => {
-    if (userId) {
-      await saveTransaction(userId, t);
+    if (userId === "mock-user") {
+      setTransactions(prev => {
+        const newTx = [t, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        localStorage.setItem(`transactions_mock-user`, JSON.stringify(newTx));
+        return newTx;
+      });
+      showToast("Đã thêm giao dịch thành công!");
+    } else if (userId) {
+      try {
+        await saveTransaction(userId, t);
+        showToast("Đã thêm giao dịch thành công!");
+      } catch (error) {
+        console.error("Error saving transaction:", error);
+        showToast("Lỗi: Không thể lưu giao dịch.");
+      }
     }
-    showToast("Đã thêm giao dịch thành công!");
   }, [userId]);
 
   const handleAddIncome = useCallback(async (t: Transaction) => {
-    if (userId) {
-      await saveTransaction(userId, t);
+    if (userId === "mock-user") {
+      setTransactions(prev => {
+        const newTx = [t, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        localStorage.setItem(`transactions_mock-user`, JSON.stringify(newTx));
+        return newTx;
+      });
+      showToast("Đã thêm nguồn thu thành công!");
+    } else if (userId) {
+      try {
+        await saveTransaction(userId, t);
+        showToast("Đã thêm nguồn thu thành công!");
+      } catch (error) {
+        console.error("Error saving income:", error);
+        showToast("Lỗi: Không thể lưu nguồn thu.");
+      }
     }
-    showToast("Đã thêm nguồn thu thành công!");
   }, [userId]);
 
   const handleDeleteTransaction = useCallback(async (t: Transaction) => {
-    if (userId && userId !== "mock-user") {
-      await deleteTransaction(userId, t.id);
-    } else {
-      setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, isDeleted: true } : tx));
+    if (userId === "mock-user") {
+      setTransactions(prev => {
+        const newTx = prev.map(tx => tx.id === t.id ? { ...tx, isDeleted: true } : tx);
+        localStorage.setItem(`transactions_mock-user`, JSON.stringify(newTx));
+        return newTx;
+      });
+      showToast("Đã xóa giao dịch!");
+    } else if (userId) {
+      try {
+        await deleteTransaction(userId, t.id);
+        showToast("Đã xóa giao dịch!");
+      } catch (error) {
+        console.error("Error deleting transaction:", error);
+        showToast("Lỗi: Không thể xóa giao dịch.");
+      }
     }
-    showToast("Đã xóa giao dịch!");
   }, [userId]);
 
   const handleRestoreTransaction = useCallback(async (t: Transaction) => {
-    if (userId && userId !== "mock-user") {
-      await restoreTransaction(userId, t.id);
-    } else {
-      setTransactions(prev => prev.map(tx => tx.id === t.id ? { ...tx, isDeleted: false } : tx));
+    if (userId === "mock-user") {
+      setTransactions(prev => {
+        const newTx = prev.map(tx => tx.id === t.id ? { ...tx, isDeleted: false } : tx);
+        localStorage.setItem(`transactions_mock-user`, JSON.stringify(newTx));
+        return newTx;
+      });
+      showToast("Đã khôi phục giao dịch!");
+    } else if (userId) {
+      try {
+        await restoreTransaction(userId, t.id);
+        showToast("Đã khôi phục giao dịch!");
+      } catch (error) {
+        console.error("Error restoring transaction:", error);
+        showToast("Lỗi: Không thể khôi phục giao dịch.");
+      }
     }
-    showToast("Đã khôi phục giao dịch!");
   }, [userId]);
 
   const handlePermanentDeleteTransaction = useCallback(async (t: Transaction) => {
-    if (userId && userId !== "mock-user") {
-      await permanentlyDeleteTransaction(userId, t.id);
-    } else {
-      setTransactions(prev => prev.filter(tx => tx.id !== t.id));
+    if (userId === "mock-user") {
+      setTransactions(prev => {
+        const newTx = prev.filter(tx => tx.id !== t.id);
+        localStorage.setItem(`transactions_mock-user`, JSON.stringify(newTx));
+        return newTx;
+      });
+      showToast("Đã xóa vĩnh viễn giao dịch!");
+    } else if (userId) {
+      try {
+        await permanentlyDeleteTransaction(userId, t.id);
+        showToast("Đã xóa vĩnh viễn giao dịch!");
+      } catch (error) {
+        console.error("Error permanently deleting transaction:", error);
+        showToast("Lỗi: Không thể xóa vĩnh viễn giao dịch.");
+      }
     }
-    showToast("Đã xóa vĩnh viễn giao dịch!");
   }, [userId]);
 
   const handleUploadClick = useCallback(() => {
@@ -293,6 +388,7 @@ export default function App() {
             onAddTransaction={handleAddTransaction}
             onAddIncome={handleAddIncome}
             onDeleteTransaction={handleDeleteTransaction}
+            themeColor={themeColor}
           />
         )}
         {activeTab === "transactions" && (
@@ -302,7 +398,7 @@ export default function App() {
             onDeleteTransaction={handleDeleteTransaction}
           />
         )}
-        {activeTab === "settings" && <Settings onLogout={handleLogout} userName={userName} onUserNameChange={setUserName} userEmail={userEmail} deletedTransactions={transactions.filter(t => t.isDeleted)} onRestoreTransaction={handleRestoreTransaction} onPermanentDeleteTransaction={handlePermanentDeleteTransaction} />}
+        {activeTab === "settings" && <Settings onLogout={handleLogout} userName={userName} onUserNameChange={setUserName} userEmail={userEmail} deletedTransactions={transactions.filter(t => t.isDeleted)} onRestoreTransaction={handleRestoreTransaction} onPermanentDeleteTransaction={handlePermanentDeleteTransaction} themeColor={themeColor} onThemeColorChange={(color) => { setThemeColor(color); localStorage.setItem("themeColor", color); }} />}
       </div>
 
       {/* Overlays */}

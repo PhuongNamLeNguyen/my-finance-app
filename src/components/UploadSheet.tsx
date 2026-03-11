@@ -11,7 +11,6 @@ export default function UploadSheet({
   onClose,
   onUpload,
 }: UploadSheetProps) {
-
   if (!isOpen) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,7 +68,7 @@ export default function UploadSheet({
                   accept="image/*"
                   capture="environment"
                   onChange={handleFileChange}
-                  className="sr-only"
+                  className="hidden"
                 />
               </label>
 
@@ -93,10 +92,10 @@ export default function UploadSheet({
                 </div>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg, image/png, image/jpg, image/webp, image/heic"
                   multiple
                   onChange={handleFileChange}
-                  className="sr-only"
+                  className="hidden"
                 />
               </label>
 
